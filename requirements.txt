@@ -1,0 +1,15 @@
+llama-index-storage-docstore-mongodb
+llama-index-storage-index-store-mongodb
+llama-index-llms-openai
+llama-index
+
+llama-index-storage-docstore-redis
+llama-index-storage-index-store-redis
+llama-index-llms-langchain
+
+llama-index-embeddings-huggingface
+llama-index-embeddings-langchain
+
+llama-index-vector-stores-mongodb
+
+transformers
