@@ -136,7 +136,8 @@ class WebCrawler:
                                         )
                                     )
                                 else:
-                                    f.write(result.markdown_v2.raw_markdown)
+
+                                    f.write(result.markdown_v2.fit_markdown)
                         else:
                             print(f"Failed: {url} - Error: {result.error_message}")
                     except Exception as e:
@@ -146,7 +147,6 @@ class WebCrawler:
 
     async def get_data(self, url, filename):
         all_urls = self.sitemap_crawler.crawl_sitemap(url)
-        print("out")
         print(all_urls)
 
         # if not len(all_urls) :
@@ -155,8 +155,3 @@ class WebCrawler:
 
     async def get_page_data(self, url: str, filename: str):
         await self.crawl_parallel([url], filename)
-
-
-# if __name__ == "__main__":
-#     crawler = WebCrawler()
-#     asyncio.run(crawler.main())

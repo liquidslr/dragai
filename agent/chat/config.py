@@ -1,3 +1,7 @@
+import llama_index.core
+import os
+
+
 class Config:
     def __init__(
         self,
@@ -5,14 +9,22 @@ class Config:
         llm_api_key,
         namespace,
         model,
-        host,
-        port,
+        host=None,
+        port=None,
         uri=None,
         embedding_model=None,
         model_type="openai",
         store_type="redis",
         persist_disk=False,
+        phoenix_api_key=None,
     ):
+
+        PHOENIX_API_KEY = phoenix_api_key
+        os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = f"api_key={PHOENIX_API_KEY}"
+        llama_index.core.set_global_handler(
+            "arize_phoenix", endpoint="https://llamatrace.com/v1/traces"
+        )
+
         self.URI = uri
         self.STORE_HOST = host
         self.STORE_PORT = port

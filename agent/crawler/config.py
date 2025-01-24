@@ -31,9 +31,16 @@ class Crawl4AIConfig:
             self.md_generator = md_generator
 
         if browser_config is None:
+            # user_data_dir = (
+            #     "/Users/gauravkumar/Library/Application Support/Google/Chrome/Default",
+            # )
             self.browser_config = BrowserConfig(
                 verbose=True,
                 headless=False,
+                # use_managed_browser=True,
+                # use_managed_browser=True,
+                user_data_dir="/Users/gauravkumar/Library/Application Support/Google/Chrome/",
+                browser_type="chromium",
             )
         else:
             self.browser_config = browser_config

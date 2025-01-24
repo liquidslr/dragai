@@ -14,7 +14,7 @@ setup(
     license="MIT",
     packages=find_packages(),
     install_requires=[],
-    keywords=["python", "first package"],
+    keywords=["python", "rag agent", "ai"],
     classifiers=[
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
