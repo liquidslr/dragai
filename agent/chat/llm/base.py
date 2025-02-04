@@ -2,4 +2,5 @@ from abc import ABC
 
 
 class LanguageModel(ABC):
-    pass
+    def __init__(self, **kwargs):
+        self.params = kwargs

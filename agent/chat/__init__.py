@@ -1,6 +1,3 @@
-from dragai.agent.chat.config import Config
-from dragai.agent.chat.logger import Logger
-from dragai.agent.chat.parsing import DocumentHandler
-from dragai.agent.chat.parsing import DocumentHandler
-from dragai.agent.chat.storage import StoreManager
-from dragai.agent.chat.manager import LLMManager, RAGAgent
+from .logger import Logger
+from .parsing import Document
+from .manager import RAGAgent

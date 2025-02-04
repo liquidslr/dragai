@@ -1,7 +1,6 @@
 from typing import Dict, Type
 
 from .base import IndexBase
-from .base import IndexBase
 
 
 class IndexFactory:

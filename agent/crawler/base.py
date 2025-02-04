@@ -1,5 +1,7 @@
 import asyncio
+import os
 import json
+import hashlib
 from collections import deque
 from typing import List, Set
 
@@ -105,7 +107,9 @@ class WebCrawler:
     async def crawl_parallel(
         self,
         urls: List[str],
-        filename: str,
+        folder: str = None,
+        filename: str = None,
+        append: bool = False,
     ):
         """Crawl multiple URLs in parallel with a concurrency limit."""
 
@@ -128,7 +132,23 @@ class WebCrawler:
                         if result.success:
                             print(f"Successfully crawled: {url}")
 
-                            with open(f"""./data/{filename}.md""", "a") as f:
+                            if append:
+                                if filename is None:
+                                    raise Exception("Filename is required")
+                                file_name = filename
+                            else:
+                                file_name = (
+                                    hashlib.sha256(url.encode()).hexdigest()[:5]
+                                    if filename is None
+                                    else filename
+                                )
+
+                            if folder is not None:
+                                file_name = os.path.join(folder, file_name)
+
+                            with open(
+                                f"""{file_name}.md""", "a" if append else "w"
+                            ) as f:
                                 if self.crawler_config.filter_text:
                                     f.write(
                                         self.crawler_config.filter_text(
@@ -136,7 +156,6 @@ class WebCrawler:
                                         )
                                     )
                                 else:
-
                                     f.write(result.markdown_v2.fit_markdown)
                         else:
                             print(f"Failed: {url} - Error: {result.error_message}")
@@ -147,11 +166,15 @@ class WebCrawler:
 
     async def get_data(self, url, filename):
         all_urls = self.sitemap_crawler.crawl_sitemap(url)
-        print(all_urls)
+        if not len(all_urls):
+            all_urls = await self.get_website_urls(url, filename)
+            await self.crawl_parallel(list(all_urls), filename)
 
-        # if not len(all_urls) :
-        # all_urls = await self.get_website_urls(url, filename)
-        # await self.crawl_parallel(list(all_urls), filename)
-
-    async def get_page_data(self, url: str, filename: str):
-        await self.crawl_parallel([url], filename)
+    async def get_page_data(
+        self,
+        url: str,
+        folder: str = None,
+        filename: str = None,
+        append: bool = False,
+    ):
+        await self.crawl_parallel([url], folder, filename, append)

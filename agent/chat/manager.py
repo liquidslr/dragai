@@ -1,51 +1,51 @@
-from dragai.agent.chat import Config, Logger
-from dragai.agent.chat.index import IndexManager
+import os
+from typing import Optional
+import llama_index.core
 
+from dragai.agent.chat import Logger
+from dragai.agent.chat.index import IndexManager
 from dragai.agent.chat.storage import StoreManager
 from dragai.agent.chat.llm import LLMManager
-from dragai.agent.chat.parsing import DocumentHandler
+from dragai.agent.chat.parsing import Document
 
 
 class RAGAgent:
-    def __init__(self, config: Config):
+    def __init__(
+        self,
+        llm: LLMManager,
+        storage: StoreManager,
+        index: IndexManager,
+        document: Optional[Document] = None,
+        phoenix_api_key: Optional[str] = None,
+    ):
         Logger.setup()
-        self.config = config
 
-        self.storage_manager = None
-        self.storage_manager = StoreManager.create(
-            store_type=self.config.store_type,
-            host=config.STORE_HOST,
-            port=config.STORE_PORT,
-            namespace=config.NAMESPACE,
-            uri=config.URI,
-        )
+        if llm is None:
+            raise TypeError("Missing required argument 'LLM'")
 
-        self.document_handler = DocumentHandler(self.config.INPUT_FILES)
-        self.index_manager = IndexManager.create(
-            store_type=self.config.store_type,
-            storage_manager=self.storage_manager,
-            document_handler=self.document_handler,
-        )
+        if storage is None:
+            raise TypeError("Missing required arguement 'storage")
 
-        self.llm_manager = LLMManager.create(
-            model_type=config.MODEL_TYPE,
-            api_key=config.OPENAI_API_KEY,
-            model=config.MODEL,
-            temperature=config.TEMPERATURE,
-            chunk_size=config.CHUNK_SIZE,
-            embedding_model=config.EMBEDDING_MODEL,
-            cache_folder="./store/",
-        )
+        if index is None:
+            raise TypeError("Missing required arguement 'index")
 
-        self.agent_manager = None
+        self.llm_manager = llm
+        self.storage_manager = storage
+        self.index_manager = index
+        self.document_handler = document
 
-    def create_index(self, key_name: str):
-        self.index_manager.create_index(key_name)
+        if phoenix_api_key:
+            os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = f"api_key={phoenix_api_key}"
+            llama_index.core.set_global_handler(
+                "arize_phoenix", endpoint="https://llamatrace.com/v1/traces"
+            )
 
-    async def run(self, prompt: str, key_name: str) -> str:
-        if self.index_manager.index:
-            _ = self.index_manager.index
-        else:
-            self.index_manager.load_index(key_name)
+    def create_index(self):
+        """Create nodes from documents, optionally adding metadata."""
+        self.index_manager.create_index()
 
+    def get_nodes(self, prompt: str, top_k: int = 5):
+        return self.index_manager.get_relevant_nodes(prompt, top_k)
+
+    async def run(self, prompt: str) -> str:
         return await self.index_manager.chat(prompt)

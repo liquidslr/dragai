@@ -1,86 +1,98 @@
-from llama_index.core import (
-    VectorStoreIndex,
-)
-from llama_index.core.retrievers import VectorIndexAutoRetriever
-from llama_index.core.vector_stores.types import MetadataInfo, VectorStoreInfo
-from llama_index.core import get_response_synthesizer
-from llama_index.core.query_engine import RetrieverQueryEngine
-from llama_index.core.postprocessor import SimilarityPostprocessor
+from typing import Optional
 
+from llama_index.core import VectorStoreIndex
 from dragai.agent.chat.index.base import IndexBase
 from dragai.agent.chat.index.manager import IndexFactory
+from dragai.agent.chat.index.retrievers.auto_retreiver import auto_query_engine
+from dragai.agent.chat.storage.manager import StoreManager
+from dragai.agent.chat.parsing import Document
+from .type import IndexType
 
 
 @IndexFactory.register("chromadb")
 class ChromaIndex(IndexBase):
-    def __init__(self, storage_manager, document_handler):
-        self.storage_manager = storage_manager
-        self.document_handler = document_handler
+    def __init__(
+        self,
+        storage: StoreManager,
+        index_type: IndexType = IndexType.VECTOR,
+        namespace: Optional[str] = None,
+        document: Optional[Document] = None,
+    ):
+        # Initialize with storage context and document handler.
+        self.document_handler = document
+        self.storage_manager = storage
+        self.storage_context = storage.get_storage_context()
+        self.index_type = index_type
+        self.namespace = namespace
         self.index = None
 
-    def create_index(self, key_name: str):
+    def create_index(self):
+        """Create an index from document nodes."""
         try:
-            nodes = self.document_handler.create_nodes()
-            index = VectorStoreIndex(
-                nodes,
-                storage_context=self.storage_manager.get_storage_context(),
-                show_progress=True,
-            )
+            if self.index_type == IndexType.SUMMARY:
+                # nodes = self.document_handler.get_nodes()
+                # index = SummaryIndex(nodes, storage_context=self.storage_context)
+                raise NotImplementedError("Not implemented")
+            else:
+                nodes = self.document_handler.create_nodes()
+                index = VectorStoreIndex(
+                    nodes,
+                    storage_context=self.storage_context,
+                    show_progress=True,
+                )
             self.index = index
-            file_path = f"./storage/{key_name}/chroma_index_id.json"
-            self.store_index_id(file_path, {key_name: self.index.index_id})
         except Exception as e:
             print(f"ChromaIndex creation failed: {e}")
 
-    def load_index(self, key_name: str = None):
+    def _load_index(self, key_name: str = None):
+        """Load index from the vector store."""
         try:
-            nodes = self.document_handler.get_nodes()
-            index = VectorStoreIndex(
-                nodes, storage_context=self.storage_manager.get_storage_context()
-            )
+            if self.index_type == IndexType.SUMMARY:
+                raise NotImplementedError("Not implemented")
+            else:
+                index = VectorStoreIndex.from_vector_store(
+                    self.storage_manager.vector_store
+                )
             self.index = index
-            return self.index
         except Exception as e:
             print(f"ChromaIndex loading failed: {e}")
             return None
 
-    def setup_query_agent(self):
+    def _setup_query_agent(self, top_k: int):
+        """Setup the query engine based on index type."""
         try:
-            self.index = self.load_index()
-            vector_store_info = VectorStoreInfo(
-                content_info="Interview related questions and process details",
-                metadata_info=[
-                    MetadataInfo(
-                        name="excerpt_keywords",
-                        type="str",
-                        description="Important keywords in the document",
-                    ),
-                    MetadataInfo(
-                        name="document_title",
-                        type="str",
-                        description="Title of the document",
-                    ),
-                ],
-            )
-            retriever = VectorIndexAutoRetriever(
-                self.index, vector_store_info=vector_store_info
-            )
-            response_synthesizer = get_response_synthesizer()
-            return RetrieverQueryEngine(
-                retriever=retriever,
-                response_synthesizer=response_synthesizer,
-                node_postprocessors=[SimilarityPostprocessor(similarity_cutoff=0.7)],
-            )
+            if self.index_type == IndexType.SUMMARY:
+                return self.index.as_query_engine()
+            else:
+                query_engine, _ = auto_query_engine(
+                    self.storage_context, self.document_handler, self.index, top_k
+                )
+                return query_engine
         except Exception as e:
             print(f"Setup query agent failed: {e}")
             return None
 
-    async def chat(self, prompt: str) -> str:
+    async def chat(self, prompt: str, top_k: int = 5) -> str:
+        """Query the index asynchronously with the given prompt."""
         try:
-            query_engine = self.setup_query_agent()
+            if self.index is None:
+                self._load_index(self.namespace)
+
+            query_engine = self._setup_query_agent(top_k=top_k)
+
             if query_engine:
                 return query_engine.query(prompt)
             return "Query engine setup failed."
         except Exception as e:
             print(f"Chat failed: {e}")
             return "An error occurred during chat."
+
+    def get_relevant_nodes(self, prompt: str, top_k: int) -> str:
+        """Retrieve relevant nodes for the given prompt."""
+        if self.index is None:
+            self._load_index()
+
+        _, retriever = auto_query_engine(
+            self.storage_context, self.document_handler, self.index, top_k
+        )
+        return retriever.retrieve(prompt)

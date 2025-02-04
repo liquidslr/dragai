@@ -14,7 +14,7 @@ class StorageFactory:
         return decorator
 
     @classmethod
-    def create(cls, store_type: str, **kwargs) -> Store:
+    def get_or_create(cls, store_type: str, **kwargs) -> Store:
         model_cls = cls._registry.get(store_type.lower())
         if not model_cls:
             raise ValueError(f"Model type '{store_type}' is not registered.")
@@ -26,5 +26,5 @@ class StorageFactory:
 
 class StoreManager:
     @staticmethod
-    def create(store_type: str, **kwargs) -> Store:
-        return StorageFactory.create(store_type, **kwargs)
+    def get_or_create(store_type: str, **kwargs) -> Store:
+        return StorageFactory.get_or_create(store_type, **kwargs)
