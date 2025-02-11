@@ -1,7 +1,7 @@
 ### DragAI: Open-source RAG agent for websites data
 
 
-DragAI helps to build a Retrieval-Augmented Generation (RAG) chat agenT. The agent integrates web crawling, vector storage, and language modeling to ingest, index, and interact with data collected from the web.
+DragAI helps to build a Retrieval-Augmented Generation (RAG) chat agent. The agent integrates web crawling, vector storage, and language modeling to ingest, index, and interact with data collected from the web.
 
 ---
 
@@ -12,6 +12,7 @@ DragAI helps to build a Retrieval-Augmented Generation (RAG) chat agenT. The age
 - **Language Model Integration:** Use an OpenAI-powered model (e.g., GPT-4) or any open source model using Ollama for generating responses.
 - **Document Parsing & Indexing:** Convert input files into documents and index them for efficient search and retrieval.
 - **RAG Agent:** A retrieval-augmented generation agent that integrates the vector store and language model to facilitate chat interactions with indexed documents.
+- **Structered Data Generation:** Turn your documents into strcutred data using pydantic data models.
 
 ---
 

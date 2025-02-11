@@ -67,7 +67,6 @@ def custom_query_engine(
 ):
     # Hack to get all the nodes
     # https://github.com/run-llama/llama_index/issues/9893
-
     retriever = index.as_retriever(similarity_top_k=1000)
     source_nodes = retriever.retrieve("fake")
     nodes = [x.node for x in source_nodes]

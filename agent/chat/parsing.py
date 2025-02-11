@@ -33,7 +33,7 @@ class Document:
     def __init__(
         self,
         input_files: List[str] | str,
-        llm: LLMManager,
+        llm: LLMManager | None = None,
         add_metadata: Optional[bool] = False,
     ):
         if isinstance(input_files, list):
@@ -44,6 +44,8 @@ class Document:
 
         self.add_metadata = add_metadata
         if self.add_metadata:
+            if llm is None:
+                raise ValueError("LLM is required when adding metadata")
             self.metadata_extractor = MetadataExtractor(llm)
 
     def create_nodes(self):

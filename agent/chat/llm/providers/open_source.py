@@ -32,3 +32,6 @@ class OpenSourceModel(LanguageModel):
         Settings.embed_model = self.embeddings_model
         self.temperature = temperature
         self.model = None
+
+    def complete(self, prompt: str) -> str:
+        return self.model.complete(prompt)

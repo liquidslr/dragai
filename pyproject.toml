@@ -1,0 +1,22 @@
+[project]
+name = "dragai"
+version = "0.1.0"
+description = "Open-source RAG agent for unstructered data"
+authors = [
+    {name = "Gaurav Kumar",email = "gaurav.kumar9825@gmail.com"}
+]
+readme = "README.md"
+requires-python = "<4.0,>=3.9"
+dependencies = [
+    "chromadb (>=0.6.3,<0.7.0)",
+    "crawl4ai (>=0.4.248,<0.5.0)",
+    "nest-asyncio (>=1.6.0,<2.0.0)",
+    "pydantic (>=2.10.6,<3.0.0)",
+    "pymongo (>=4.11.1,<5.0.0)",
+    "llama-index (>=0.12.16,<0.13.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

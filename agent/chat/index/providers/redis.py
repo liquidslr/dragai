@@ -6,15 +6,11 @@ from llama_index.core import (
     load_index_from_storage,
 )
 
-
 from dragai.agent.chat.index.base import IndexBase
 from dragai.agent.chat.index.manager import IndexFactory
-from dragai.agent.chat.index.retrievers.auto_retreiver import auto_query_engine
-from dragai.agent.chat.index.retrievers.bm25 import fusion_query_engine
 from dragai.agent.chat.storage.manager import StoreManager
 from dragai.agent.chat.parsing import Document
-
-from .type import IndexType
+from .type import IndexType, QueryEngineType
 
 
 @IndexFactory.register("redis")
@@ -25,6 +21,7 @@ class RedisIndex(IndexBase):
         index_type: IndexType = IndexType.SUMMARY,
         namespace: Optional[str] = None,
         document: Optional[Document] = None,
+        query_engine: str = QueryEngineType.AUTO,
     ):
         self.storage_manager = storage
         self.storage_context = self.storage_manager.get_storage_context()
@@ -32,6 +29,7 @@ class RedisIndex(IndexBase):
         self.namespace = namespace
         self.index_type = index_type
         self.index = None
+        self.query_engine = query_engine
 
     def create_index(self):
         """Create an index from document nodes."""

@@ -18,7 +18,6 @@ class RAGAgent:
         document: Optional[Document] = None,
         phoenix_api_key: Optional[str] = None,
     ):
-        Logger.setup()
 
         if llm is None:
             raise TypeError("Missing required argument 'LLM'")
@@ -47,5 +46,11 @@ class RAGAgent:
     def get_nodes(self, prompt: str, top_k: int = 5):
         return self.index_manager.get_relevant_nodes(prompt, top_k)
 
-    async def run(self, prompt: str) -> str:
-        return await self.index_manager.chat(prompt)
+    def get_documents(self):
+        return self.document_handler.get_documents()
+
+    def run(self, prompt: str) -> str:
+        """Synchronous wrapper for chat"""
+        import asyncio
+
+        return asyncio.run(self.index_manager.chat(prompt))

@@ -1,12 +1,17 @@
 from typing import Optional
-
+from enum import Enum
 from llama_index.core import VectorStoreIndex
 from dragai.agent.chat.index.base import IndexBase
 from dragai.agent.chat.index.manager import IndexFactory
-from dragai.agent.chat.index.retrievers.auto_retreiver import auto_query_engine
 from dragai.agent.chat.storage.manager import StoreManager
 from dragai.agent.chat.parsing import Document
-from .type import IndexType
+from dragai.agent.chat.index.retrievers import (
+    auto_query_engine,
+    custom_query_engine,
+    fusion_query_engine,
+    rerank_query_engine,
+)
+from .type import IndexType, QueryEngineType
 
 
 @IndexFactory.register("chromadb")
@@ -14,9 +19,10 @@ class ChromaIndex(IndexBase):
     def __init__(
         self,
         storage: StoreManager,
-        index_type: IndexType = IndexType.VECTOR,
+        index_type: IndexType = IndexType.VECTOR.value,
         namespace: Optional[str] = None,
         document: Optional[Document] = None,
+        query_engine: str = QueryEngineType.AUTO.value,
     ):
         # Initialize with storage context and document handler.
         self.document_handler = document
@@ -25,6 +31,7 @@ class ChromaIndex(IndexBase):
         self.index_type = index_type
         self.namespace = namespace
         self.index = None
+        self.query_engine = query_engine
 
     def create_index(self):
         """Create an index from document nodes."""
@@ -58,15 +65,34 @@ class ChromaIndex(IndexBase):
             print(f"ChromaIndex loading failed: {e}")
             return None
 
+    def _get_query_engine(self, top_k: int):
+        """Get the query engine based on index type."""
+        print(self.query_engine, QueryEngineType.AUTO.value, "self query engine")
+        if self.query_engine == QueryEngineType.AUTO.value:
+            return auto_query_engine(
+                self.storage_context, self.document_handler, self.index, top_k
+            )
+        elif self.query_engine == QueryEngineType.BM25.value:
+            return fusion_query_engine(
+                self.storage_context, self.document_handler, self.index, top_k
+            )
+        elif self.query_engine == QueryEngineType.RERANK.value:
+            return rerank_query_engine(
+                self.storage_context, self.document_handler, self.index, top_k
+            )
+        else:
+            return custom_query_engine(
+                self.storage_context, self.document_handler, self.index, top_k
+            )
+
     def _setup_query_agent(self, top_k: int):
         """Setup the query engine based on index type."""
         try:
             if self.index_type == IndexType.SUMMARY:
                 return self.index.as_query_engine()
             else:
-                query_engine, _ = auto_query_engine(
-                    self.storage_context, self.document_handler, self.index, top_k
-                )
+                query_engine, _ = self._get_query_engine(top_k)
+
                 return query_engine
         except Exception as e:
             print(f"Setup query agent failed: {e}")
@@ -92,7 +118,11 @@ class ChromaIndex(IndexBase):
         if self.index is None:
             self._load_index()
 
-        _, retriever = auto_query_engine(
-            self.storage_context, self.document_handler, self.index, top_k
-        )
+        _, retriever = self._get_query_engine(top_k)
         return retriever.retrieve(prompt)
+
+    def get_documents(self):
+        if self.index is None:
+            self._load_index()
+
+        return self.index.get_nodes()
